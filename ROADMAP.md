@@ -324,24 +324,24 @@ Recommended default: Key-Value Store — it touches networking, data structures,
 
 ## 📊 Progress Tracker
 
-| Date | Phase | Milestone Completed | Notes |
-|------|-------|---------------------|-------|
-| | 0 | Environment setup | |
-| | 0 | First C program | |
-| | 1 | Pointers mastered | |
-| | 1 | Grade Manager complete | |
-| | 2 | Linear structures built | |
-| | 2 | Trees built | |
-| | 2 | Hash table built | |
-| | 2 | DSA Library complete | |
-| | 3 | Systems concepts learned | |
-| | 3 | Capstone project complete | |
-| | 4 | Ownership understood | |
-| | 4 | CLI Todo App complete | |
-| | 5 | Concurrency mastered | |
-| | 5 | Web Scraper complete | |
-| | 6 | Production project complete | |
-| | 7 | Portfolio polished | |
+| Date     | Phase | Milestone Completed | Notes                      |
+|----------|-------|---------------------|----------------------------|
+| 10/04/26 | 0 | Environment setup | Used CLion                 |
+| 14/04/26 | 0 | First C program | Simple Hello World Program |
+|          | 1 | Pointers mastered |                            |
+|          | 1 | Grade Manager complete |                            |
+|          | 2 | Linear structures built |                            |
+|          | 2 | Trees built |                            |
+|          | 2 | Hash table built |                            |
+|          | 2 | DSA Library complete |                            |
+|          | 3 | Systems concepts learned |                            |
+|          | 3 | Capstone project complete |                            |
+|          | 4 | Ownership understood |                            |
+|          | 4 | CLI Todo App complete |                            |
+|          | 5 | Concurrency mastered |                            |
+|          | 5 | Web Scraper complete |                            |
+|          | 6 | Production project complete |                            |
+|          | 7 | Portfolio polished |                            |
 
 ---
 
