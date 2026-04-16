@@ -1,5 +1,5 @@
 # Phase 0 Notes — Environment & Orientation
-### K&R: The C Programming Language | Sections Read: Introduction to 1.4
+### K&R: The C Programming Language | Sections Read: Introduction through 1.5
 *Date started: April 15, 2026*
 
 ---
@@ -44,7 +44,7 @@ Most modern operating systems are philosophically descended from UNIX. macOS is 
 
 ---
 
-## Key Concepts from K&R (Introduction to Section 1.4)
+## Key Concepts from K&R (Introduction through Section 1.4)
 
 ### Indentation in C
 
@@ -84,6 +84,125 @@ Key differences:
 | Convention | lowercase | ALL_CAPS |
 
 Using symbolic constants instead of raw numbers (magic numbers) makes code easier to read and maintain. If the value needs to change, you change it in one place.
+
+---
+
+## Key Concepts from K&R Section 1.5 — Character Input and Output
+
+### The model: text streams
+
+C treats all input and output as streams of characters. Whether you are reading from the keyboard, a file, or a pipe, the program sees the same thing: a sequence of characters arriving one at a time. This is the UNIX philosophy made concrete in the language itself.
+
+### getchar() and putchar()
+
+These are the two most fundamental I/O functions in C:
+
+- `getchar()` — reads one character from standard input and returns it as an `int`
+- `putchar(c)` — writes one character to standard output
+
+```c
+int c;
+c = getchar();
+putchar(c);
+```
+
+Note that `c` is declared as `int`, not `char`. This is intentional and important — see the EOF section below.
+
+### EOF — End of File
+
+EOF is a symbolic constant defined in `<stdio.h>`. Its value is `-1`.
+
+It is the sentinel value that `getchar()` returns when there is no more input — either because you have reached the end of a file, or because the user typed `Ctrl+D` on Linux/macOS (or `Ctrl+Z` on Windows) to signal end of input.
+
+```c
+#define EOF -1  // what the standard library defines internally
+```
+
+This is why `c` must be `int` and not `char`. A `char` can only hold character values (typically 0–255). EOF is `-1`, which falls outside that range on many systems. If you store `getchar()`'s return value in a `char`, you may never correctly detect EOF — the program would loop forever or behave incorrectly.
+
+The rule: **always store the return value of `getchar()` in an `int`.**
+
+### The standard read loop
+
+The idiomatic C pattern for reading all input until EOF:
+
+```c
+int c;
+while ((c = getchar()) != EOF)
+    putchar(c);
+```
+
+Two things to understand about this loop:
+
+1. The assignment `c = getchar()` happens inside the condition. C allows assignment anywhere an expression is valid. The parentheses around `c = getchar()` are required — without them, `!=` binds tighter than `=` and the logic breaks.
+
+2. The loop body runs zero or more times. If the very first character is EOF, the body never executes.
+
+---
+
+## Exercises Completed
+
+### Exercise 1-6 — Verify that `getchar() != EOF` is 0 or 1
+
+**Task:** Verify that the expression `getchar() != EOF` evaluates to 0 or 1.
+
+**Solution:**
+
+```c
+#include <stdio.h>
+
+int main(void) {
+    int c;
+
+    while ((c = getchar()) != EOF) {
+        printf("%d\n", c != EOF);
+    }
+
+    return 0;
+}
+```
+
+**What this proves:** The expression `c != EOF` is a comparison. In C, comparisons always produce either `1` (true) or `0` (false) — nothing else. While input is being read and `c` is a valid character, `c != EOF` is `1`. The loop exits when `getchar()` returns EOF, so by definition `c != EOF` is never `0` inside the loop body — it only becomes `0` at the condition check that exits the loop.
+
+The conclusion: `(getchar() != EOF)` equals `1` for all valid characters and `0` when EOF is reached.
+
+---
+
+### Exercise 1-7 — Print the value of EOF
+
+**Task:** Write a program to print the value of EOF.
+
+**Solution:**
+
+```c
+#include <stdio.h>
+
+int main() {
+    printf("EOF value: %d\n", EOF);
+}
+```
+
+**Output:** `EOF value: -1`
+
+**What this shows:** EOF is not a character. It is the integer `-1`, defined as a symbolic constant in `<stdio.h>`. No valid character has the value `-1`, which is exactly why it works as a sentinel — it can never be confused with real input. This is also why `getchar()` returns `int` and not `char`.
+
+---
+
+## Other Programs Written
+
+### read_char.c — Echo input back to output
+
+```c
+#include <stdio.h>
+
+int main() {
+    int c;
+    while ((c = getchar()) != EOF)
+        putchar(c);
+}
+```
+
+The simplest useful C program: reads every character from stdin and writes it to stdout. Compile and run it, type some text, and it mirrors it back. This is essentially what the `cat` command does.
 
 ---
 
@@ -133,18 +252,30 @@ phase-0/src/
     a.out
 ```
 
+### Date: 16/04/26
+```
+phase-0/src/
+    read_char.c
+    count_character.c
+    
+    /exercise
+    exercise_1_6.c
+    exercise_1_7.c
+```
+
 ---
 
 ## Roadmap Alignment
 
-| Roadmap Item | Status                    |
-|---|---------------------------|
-| Install GCC or Clang | Done                      |
-| Set up VS Code / CLion | Done (CLion)              |
-| Create GitHub repo: systems-journey | Done                      |
-| Read intro chapters of K&R | In progress (through 1.4) |
-| Write and compile first C program | Done (hello_world.c)      |
- | Watch: CS50 Week 1 lecture (free, Harvard edX) | Done                      |
+| Roadmap Item | Status |
+|---|---|
+| Install GCC or Clang | Done |
+| Set up VS Code / CLion | Done (CLion) |
+| Create GitHub repo: systems-journey | Done |
+| Read intro chapters of K&R | In progress (through 1.5) |
+| Write and compile first C program | Done (hello_world.c) |
+| Watch: CS50 Week 1 lecture (free, Harvard edX) | Done |
+
 ---
 
-*Continue from: K&R Section 1.5*
+*Continue from: K&R Section 1.6*
