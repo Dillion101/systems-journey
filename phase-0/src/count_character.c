@@ -12,3 +12,5 @@ int main ()
         ++nc;
     printf("%ld\n", nc);
 }
+
+//The reader also counts space /n.

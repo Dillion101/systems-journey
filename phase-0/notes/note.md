@@ -1,5 +1,5 @@
 # Phase 0 Notes — Environment & Orientation
-### K&R: The C Programming Language | Sections Read: Introduction through 1.5
+### K&R: The C Programming Language | Sections Read: Introduction through 1.5.3
 *Date started: April 15, 2026*
 
 ---
@@ -138,6 +138,59 @@ Two things to understand about this loop:
 
 2. The loop body runs zero or more times. If the very first character is EOF, the body never executes.
 
+### Section 1.5.2 — Character Counting
+
+The character counter introduces `long` as a type — used instead of `int` when the count could grow large enough to overflow a 32-bit integer. On most systems, `long` is at least 32 bits but guaranteed to be no smaller than `int`. For counting characters across potentially large files, it is the safer choice.
+
+```c
+long nc;
+nc = 0;
+while (getchar() != EOF)
+    ++nc;
+printf("%ld\n", nc);
+```
+
+Key things to note:
+
+- The `%ld` format specifier is required for `long` — using `%d` with a `long` is undefined behavior in C
+- The body of the loop is `++nc` with no braces — legal because it is a single statement
+- `getchar()` return value is not stored here since we only care about counting, not the character itself
+- The counter also includes whitespace characters (`\n`, `\t`, spaces) — everything that comes through stdin gets counted
+
+A second version using `for` instead of `while` is also shown in the book:
+
+```c
+long nc;
+for (nc = 0; getchar() != EOF; ++nc)
+    ;
+```
+
+The body is an empty statement (just `;`). All the work happens in the for-loop's init, condition, and increment. This is valid C — the for construct does not require a non-empty body.
+
+---
+
+### Section 1.5.3 — Line Counting
+
+Lines are counted by counting newline characters. Every line of text in a UNIX text stream ends with `\n` — so counting `\n` occurrences equals counting lines.
+
+```c
+int c, nl;
+nl = 0;
+while ((c = getchar()) != EOF)
+    if (c == '\n')
+        ++nl;
+printf("%d\n", nl);
+```
+
+Key things to note:
+
+- `'\n'` is a character constant — a single character, value 10 in ASCII
+- Single quotes denote character constants in C; double quotes denote string literals — these are not interchangeable
+- The if-statement has no braces — again valid for a single-statement body
+- `c` must still be `int` for correct EOF detection, even though we are comparing against a character
+
+This program is functionally equivalent to `wc -l` on UNIX systems.
+
 ---
 
 ## Exercises Completed
@@ -188,7 +241,127 @@ int main() {
 
 ---
 
+### Exercise 1-8 — Count blanks, tabs, and newlines
+
+**Task:** Write a program to count blanks, tabs, and newlines.
+
+**Solution:**
+
+```c
+#include <stdio.h>
+
+int main() {
+    int c, nl, tc, bc;
+    nl = tc = bc = 0;
+    while ((c = getchar()) != EOF)
+        if (c == '\n')
+            nl++;
+        else if (c == '\t')
+            tc++;
+        else if (c == ' ')
+            bc++;
+    printf(" New Line Count: %d, Tab Count: %d, Blank Count: %d\n", nl, tc, bc);
+}
+```
+
+**What this demonstrates:** Chained `if / else if` is the correct structure here — each character can only be one thing, so the branches are mutually exclusive. Using three separate `if` statements would work but would do unnecessary comparisons. The chained form short-circuits: once a match is found, the remaining conditions are skipped.
+
+---
+
+### Exercise 1-9 — Collapse multiple blanks into one
+
+**Task:** Write a program to copy its input to its output, replacing each string of one or more blanks by a single blank.
+
+**Solution:**
+
+```c
+#include <stdio.h>
+
+int main() {
+    int c, prev_was_space;
+    prev_was_space = 0;
+
+    while ((c = getchar()) != EOF) {
+        if (c == ' ' && prev_was_space == ' ') {}
+        else {
+            printf("%c", c);
+        }
+        prev_was_space = c;
+    }
+}
+```
+
+**What this demonstrates:** State tracking across loop iterations using a single variable. `prev_was_space` holds the previous character so the current iteration can make a decision based on context. The pattern of "remember what you just saw" appears constantly in stream processing. Note: the empty `if` body `{}` is functional but a cleaner inversion would be `if (!(c == ' ' && prev_was_space == ' ')) putchar(c);`.
+
+---
+
+### Exercise 1-10 — Make tabs and backspaces visible
+
+**Task:** Write a program to copy its input to its output, replacing each tab by `\t`, each backspace by `\b`, and each backslash by `\\`.
+
+**Solution:**
+
+```c
+#include <stdio.h>
+
+int main() {
+    int c;
+
+    while ((c = getchar()) != EOF) {
+        if (c == '\t')
+            printf("\\t");
+        else if (c == '\b')
+            printf("\\b");
+        else if (c == '\\')
+            printf("\\\\");
+        else
+            putchar(c);
+    }
+
+    return 0;
+}
+```
+
+**What this demonstrates:** The distinction between escape sequences as input values versus their literal text representations as output. When `c == '\t'`, the character is a real tab (ASCII 9). To print the two visible characters `\t`, you output `"\\t"` — the double backslash produces a literal `\` in the string, followed by `t`. Same logic applies to `\\` → `\\\\`. This kind of character-level transformation is a foundational pattern in parsers and formatters.
+
+---
+
 ## Other Programs Written
+
+### count_character.c — Count all characters from input
+
+```c
+#include <stdio.h>
+
+int main() {
+    long nc;
+    nc = 0;
+    while (getchar() != EOF)
+        ++nc;
+    printf("%ld\n", nc);
+}
+```
+
+Counts every character — including spaces and newlines — using a `long` to handle large inputs safely. From K&R Section 1.5.2.
+
+---
+
+### line_counting.c — Count newlines from input
+
+```c
+#include <stdio.h>
+
+int main() {
+    int c, nl;
+    nl = 0;
+    while ((c = getchar()) != EOF)
+        if (c == '\n')
+            ++nl;
+    printf("%d\n", nl);
+}
+```
+
+Counts lines by counting `\n` characters. Equivalent to `wc -l`. From K&R Section 1.5.3.
 
 ### read_char.c — Echo input back to output
 
@@ -263,6 +436,17 @@ phase-0/src/
     exercise_1_7.c
 ```
 
+### Date: 17/04/26
+```
+phase-0/src/
+    line_counting.c
+
+    /exercise
+    exercise_1_8.c
+    exercise_1_9.c
+    exercise_1_10.c
+```
+
 ---
 
 ## Roadmap Alignment
@@ -272,7 +456,7 @@ phase-0/src/
 | Install GCC or Clang | Done |
 | Set up VS Code / CLion | Done (CLion) |
 | Create GitHub repo: systems-journey | Done |
-| Read intro chapters of K&R | In progress (through 1.5) |
+| Read intro chapters of K&R | In progress (through 1.5.3) |
 | Write and compile first C program | Done (hello_world.c) |
 | Watch: CS50 Week 1 lecture (free, Harvard edX) | Done |
 
