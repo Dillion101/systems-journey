@@ -1,5 +1,5 @@
 # Phase 0 Notes — Environment & Orientation
-### K&R: The C Programming Language | Sections Read: Introduction through 1.5.3
+### K&R: The C Programming Language | Sections Read: Introduction through 1.5.4
 *Date started: April 15, 2026*
 
 ---
@@ -193,6 +193,82 @@ This program is functionally equivalent to `wc -l` on UNIX systems.
 
 ---
 
+### Section 1.5.4 — Word Counting
+
+Word counting combines everything from 1.5.1–1.5.3 into one program: characters, lines, and now words. The key challenge is defining what a "word" is in terms of a character stream — and the answer is a **state machine**.
+
+A word boundary is detected by tracking whether you are currently inside or outside a word. Whitespace (`' '`, `'\n'`, `'\t'`) means you are outside. Any other character means you are inside. A new word is counted exactly once — at the moment you transition from `OUT` to `IN`.
+
+```c
+#define IN  1  /* inside a word */
+#define OUT 0  /* outside a word */
+
+int c, nl, nw, nc, state;
+state = OUT;
+nl = nw = nc = 0;
+
+while ((c = getchar()) != EOF) {
+    ++nc;
+    if (c == '\n')
+        ++nl;
+    if (c == ' ' || c == '\n' || c == '\t')
+        state = OUT;
+    else if (state == OUT) {
+        state = IN;
+        ++nw;
+    }
+}
+```
+
+Key things to note:
+
+- `IN` and `OUT` are `#define` constants — not because `1` and `0` would not work, but because named states make the logic readable. When you see `state == OUT` you know immediately what it means. `state == 0` requires you to remember what `0` represents.
+- `nw` is only incremented on the `OUT → IN` transition, not on every non-whitespace character. This is the correct logic — a five-letter word crosses that boundary once, not five times.
+- The two `if` blocks are intentionally separate (not `else if`). A newline increments `nl` AND sets `state = OUT`. If they were chained, the newline would only do one of those things.
+- A bug exists in some printings of K&R: `c = '\t'` (assignment) instead of `c == '\t'` (comparison). The assignment version always evaluates to the value of `'\t'` (9), which is truthy — so the condition would always be true, and every character would be treated as whitespace. Always read `=` vs `==` carefully in conditions.
+
+#### What i actually built: a Finite State Machine
+
+The word counter has two states and transitions between them based on input:
+
+```
+         whitespace
+    ┌──────────────────┐
+    ▼                  │
+  OUT ──────────────► IN
+       non-whitespace
+         (count word)
+```
+
+This pattern — carry minimal state, transition on input — is fundamental in C and systems programming. Lexers, parsers, network protocol handlers, and regex engines all use the same idea at their core. You built one without knowing the term for it.
+
+#### The `||` trap — why `c == ' ' || '\n' || '\t'` is always true
+
+This is one of C's most common beginner mistakes coming from Python or JavaScript.
+
+**Broken version:**
+```c
+if (c == ' ' || '\n' || '\t')   /* WRONG */
+```
+
+C parses this as:
+```c
+if ((c == ' ') || ('\n') || ('\t'))
+```
+
+`'\n'` is the integer `10`. `'\t'` is the integer `9`. In C, any non-zero integer is truthy. So this expression is always `(something) || true || true` — always true, regardless of what `c` is. Every character gets treated as whitespace and no words are ever counted.
+
+**Correct version:**
+```c
+if (c == ' ' || c == '\n' || c == '\t')   /* correct */
+```
+
+C has no `in` operator like Python (`if c in (' ', '\n', '\t')`). Every comparison is binary — one left-hand side against one right-hand side. If you are comparing the same variable against multiple values, you must write `c ==` every time. The compiler will not warn you about the broken version — it is valid C that simply does not do what you intend.
+
+**The rule:** every `==` needs its own explicit left-hand operand.
+
+---
+
 ## Exercises Completed
 
 ### Exercise 1-6 — Verify that `getchar() != EOF` is 0 or 1
@@ -326,7 +402,97 @@ int main() {
 
 ---
 
+### Exercise 1-11 — How would you test the word count program?
+
+**Task:** How would you test the word count program? What kinds of input are most likely to uncover bugs if there are any?
+
+**Answer:**
+
+Test cases that stress the boundaries of the state machine:
+
+- **Empty input** — no characters at all. All counts should be zero.
+- **Only whitespace** — spaces, tabs, newlines but no words. Word count should be zero.
+- **Single word, no newline** — tests that a word not followed by `\n` is still counted.
+- **Multiple consecutive spaces** — `"hello   world"` should count as 2 words, not more.
+- **Leading and trailing whitespace** — `"  hello  "` should still count as 1 word.
+- **Tabs between words** — `"hello\tworld"` should count as 2 words.
+- **Multiple lines** — verifies line counting works alongside word counting.
+- **Mixed whitespace** — combinations of spaces, tabs, and newlines between words.
+
+The most dangerous inputs are those at the transitions: starting in whitespace, ending in whitespace, or having consecutive whitespace of different types. Bugs in the state machine tend to appear at boundaries, not in the middle of normal input.
+
+---
+
+### Exercise 1-12 — Print input one word per line
+
+**Task:** Write a program that prints its input one word per line.
+
+**Solution:**
+
+```c
+#include <stdio.h>
+
+#define IN  1
+#define OUT 0
+
+int main() {
+    int c, state;
+    state = OUT;
+
+    while ((c = getchar()) != EOF) {
+        if (c == ' ' || c == '\n' || c == '\t') {
+            if (state == IN)
+                printf("\n");
+            state = OUT;
+        } else {
+            putchar(c);
+            state = IN;
+        }
+    }
+}
+```
+
+**What this demonstrates:** The same `IN`/`OUT` state machine from `word_count.c`, repurposed for output formatting. The key insight: a newline should be printed not when whitespace is encountered, but only when whitespace is encountered *after* being inside a word (`state == IN`). This prevents printing blank lines for consecutive whitespace — the exact trap that hours of attempting an array-based approach could not solve cleanly.
+
+**On the process:** This exercise was solved only after stepping away from the keyboard and writing pseudocode on paper first — including a manual trace through the logic with multiple words and multiple spaces as input, mimicking what the compiler would do step by step. The initial instinct was to store words in an array (natural from Python/JS), but arrays had not been covered yet. That constraint forced a simpler and ultimately more correct approach: track only the current state, one character at a time. The pseudocode trace confirmed the logic worked on paper before a single line of code was written.
+
+The lesson: pseudocode and manual tracing are not a beginner crutch — they are how good engineers avoid writing code that needs to be thrown away.
+
+---
+
 ## Other Programs Written
+
+### word_count.c — Count lines, words, and characters
+
+```c
+#include <stdio.h>
+
+#define IN  1
+#define OUT 0
+
+int main() {
+    int c, nl, nw, nc, state;
+    state = OUT;
+    nl = nw = nc = 0;
+
+    while ((c = getchar()) != EOF) {
+        ++nc;
+        if (c == '\n')
+            ++nl;
+        if (c == ' ' || c == '\n' || c == '\t')
+            state = OUT;
+        else if (state == OUT) {
+            state = IN;
+            ++nw;
+        }
+    }
+    printf("%d %d %d\n", nl, nw, nc);
+}
+```
+
+Combines line, word, and character counting in one pass. Equivalent to `wc` on UNIX. From K&R Section 1.5.4.
+
+---
 
 ### count_character.c — Count all characters from input
 
@@ -447,6 +613,16 @@ phase-0/src/
     exercise_1_10.c
 ```
 
+### Date: 18/04/26
+```
+phase-0/src/
+    word_count.c
+
+    /exercise
+    exercise_1_11.c
+    exercise_1_12.c
+```
+
 ---
 
 ## Roadmap Alignment
@@ -456,7 +632,7 @@ phase-0/src/
 | Install GCC or Clang | Done |
 | Set up VS Code / CLion | Done (CLion) |
 | Create GitHub repo: systems-journey | Done |
-| Read intro chapters of K&R | In progress (through 1.5.3) |
+| Read intro chapters of K&R | In progress (through 1.5.4) |
 | Write and compile first C program | Done (hello_world.c) |
 | Watch: CS50 Week 1 lecture (free, Harvard edX) | Done |
 
