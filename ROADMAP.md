@@ -48,11 +48,11 @@ Total estimated duration: ~12–18 months at a sustainable pace.
 - [x] Install make and gdb (debugger)
 - [x] Set up VS Code with the C/C++ extension or use CLion
 - [x] Create a GitHub repo: systems-journey
-- [ ] Read: *Why C?* — skim the intro chapters of K&R (The C Programming Language)
+- [x] Read: *Why C?* — skim the intro chapters of K&R (The C Programming Language)
 - [x] Watch: CS50 Week 1 lecture (free, Harvard edX)
 
 ### Deliverable
-- [ ] Write and compile your first C program: a calculator that takes two numbers and an operator from stdin and prints the result.
+- [x] Write and compile your first C program: a calculator that takes two numbers and an operator from stdin and prints the result.
 
 ---
 
